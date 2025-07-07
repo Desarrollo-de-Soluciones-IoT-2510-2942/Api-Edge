@@ -1,68 +1,122 @@
-# NutriControl Api Edge
 
-NutriControl Api Edge es una **API** desarrollada con **FastAPI** y **SQLAlchemy** para la gestión y monitoreo de datos nutricionales y sensores en entornos agrícolas.
+# NutriControl Sensor API Service
 
-## Características principales
+## Overview
 
-- Gestión de **dispositivos** y **sensores**.
-- Registro y consulta de **lecturas de sensores** (temperatura, humedad, luz, pH, nutrientes, etc).
-- Arquitectura modular y escalable.
-- Conexión a base de datos MySQL.
+NutriControl Sensor API Service is a Python-based application for processing and analyzing sensor data from smart devices. It provides real-time data collection, device authentication, and RESTful APIs for sensor readings and monitoring.
 
-## Estructura del proyecto
+## Features
 
+- Real-time sensor data ingestion
+- Device authentication and management
+- RESTful API for sensor data access and control
+- Edge processing and analytics
+- MySQL database integration (freedb_NutriControlDB)
+- Easy integration with cloud or local systems
+
+## Dependencies
+
+- Python 3.12 or higher
+- Flask (web framework)
+- Peewee (ORM for MySQL)
+- PyMySQL (MySQL driver)
+- python-dateutil (date and time handling)
+
+## Domain-Driven Design (DDD) Structure
+
+The project follows a Domain-Driven Design (DDD) approach, distributing the features in two main bounded contexts:
+- **Sensor Monitoring**: Manages sensor readings from smart devices, including various sensor data measurements.
+- **Identity and Access Management**: Handles device authentication.
+
+Inside each bounded context, code is organized into distinct layers:
+- **Domain**: Contains core business logic and domain models.
+- **Application**: Contains application services and use cases.
+- **Infrastructure**: Contains data access, external service integrations, and configurations.
+- **Interfaces**: Contains API controllers and user interfaces.
+
+## Database Configuration
+
+The application connects to a MySQL database with the following configuration:
+- **Host**: sql.freedb.tech
+- **Port**: 3306
+- **Database**: freedb_NutriControlDB
+- **Table**: SensorReading
+
+## Usage
+
+### Start the Service
+
+```bash
+python app.py
 ```
-main.py                # Punto de entrada de la API
-app/
-  iam/                 # Módulo de gestión de dispositivos
-    models.py          # Modelos SQLAlchemy para dispositivos
-    crud.py            # Operaciones CRUD para dispositivos
-    routes.py          # Endpoints de la API para dispositivos
-    schemas.py         # Esquemas Pydantic para validación
-  sensors/             # Módulo de gestión de sensores y lecturas
-    models.py          # Modelos SQLAlchemy para sensores y lecturas
-    crud.py            # Operaciones CRUD para sensores y lecturas
-    routes.py          # Endpoints de la API para sensores y lecturas
-    schemas.py         # Esquemas Pydantic para validación
-  shared/              # Recursos compartidos
-    database.py        # Configuración de la base de datos
-    enums.py           # Enumeraciones para tipos de sensores
-requirements.txt       # Dependencias del proyecto
-README.md              # Este archivo
+
+The service will connect to the MySQL database and verify the connection on startup.
+
+### API Endpoints
+
+- `POST /api/v1/sensor-readings` — Submit sensor data readings
+
+### Example API Usage
+
+**Submit a sensor reading:**
+```bash
+curl -X POST http://localhost:5000/api/v1/sensor-readings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sensor_id": 1,
+    "value": 36.5,
+    "created_user": 1,
+    "action": "TEMPERATURE_READING",
+    "additional_info": "Body temperature sensor"
+  }'
 ```
 
-## Endpoints principales
+**Required fields:**
+- `sensor_id` (int): Identifier of the sensor
+- `value` (double): Sensor reading value
+- `created_user` (int): User who created the record
 
-- `/devices` - Alta y consulta de dispositivos
-- `/sensors` - Alta y consulta de sensores
-- `/sensor-readings` - Registro y consulta de lecturas de sensores
+**Optional fields:**
+- `timestamp` (datetime): When the reading was taken (defaults to current time)
+- `ip_address` (string): IP address (defaults to request IP)
+- `action` (string): Action description
+- `additional_info` (string): Additional information
 
-## Requisitos
+**Response example:**
+```json
+{
+  "id": 1,
+  "sensor_id": 1,
+  "timestamp": "2025-07-06T12:30:00Z",
+  "value": 36.5,
+  "created_user": 1,
+  "create_date": "2025-07-06T12:30:00Z",
+  "is_active": true,
+  "ip_address": "127.0.0.1",
+  "action": "TEMPERATURE_READING",
+  "additional_info": "Body temperature sensor"
+}
+```
 
-- Python 3.8 o superior
-- pip
+## Database Schema
 
-## Instalación en Windows
+The `SensorReading` table structure:
+- `Id` (int, AUTO_INCREMENT, PRIMARY KEY)
+- `SensorId` (int, NOT NULL)
+- `Timestamp` (datetime(6), NOT NULL)
+- `Value` (double, NOT NULL)
+- `CreatedUser` (int, NOT NULL)
+- `UpdatedUser` (int, NULL)
+- `CreateDate` (datetime(6), NOT NULL, DEFAULT CURRENT_TIMESTAMP)
+- `UpdatedDate` (datetime(6), NULL)
+- `IsActive` (tinyint(1), NOT NULL, DEFAULT 1)
+- `IpAddress` (longtext, NULL)
+- `Action` (longtext, NULL)
+- `AdditionalInfo` (longtext, NULL)
 
-1. **Clona el repositorio:**
-   ```sh
-   git clone https://github.com/tu_usuario/nutricontroledge.git
-   cd nutricontroledge
-   ```
+## NutriControl Project
 
-2. **Crea un entorno virtual e instala dependencias:**
-   ```sh
-   python -m venv .venv
-   .venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+This service is part of the NutriControl ecosystem for nutritional monitoring and sensor data management.
 
-3. **Inicia la aplicación:**
-   ```sh
-   uvicorn main:app --reload
-   ```
+Refer to the code-level documentation for full details.
 
-La API estará disponible en `http://localhost:8000` o en la IP local mostrada en consola.
-
-## Notas
-- La configuración de la base de datos se encuentra en `app/shared/database.py`.
