@@ -39,10 +39,13 @@ def setup():
     if first_request:
         first_request = False
         try:
-            # Verificar conexión con el nuevo sistema robusto
-            from shared.infrastructure.database import ensure_connection
-            ensure_connection()
-            logger.info("Conexión a base de datos exitosa")
+            # Verificar conexión con función simple
+            from shared.infrastructure.database import test_connection
+            success, message = test_connection()
+            if success:
+                logger.info(f"Conexión a base de datos exitosa: {message}")
+            else:
+                logger.error(f"Error conectando a la base de datos: {message}")
         except Exception as e:
             logger.error(f"Error conectando a la base de datos: {e}")
             logger.error(traceback.format_exc())
@@ -84,10 +87,14 @@ def handle_exception(e):
 def health_check():
     """Endpoint para verificar el estado de la aplicación."""
     try:
-        # Verificar conexión con el nuevo sistema robusto
-        from shared.infrastructure.database import ensure_connection
-        ensure_connection()
-        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+        # Verificar conexión con función simple
+        from shared.infrastructure.database import test_connection
+        success, message = test_connection()
+        
+        if success:
+            return jsonify({'status': 'healthy', 'database': 'connected', 'message': message}), 200
+        else:
+            return jsonify({'status': 'unhealthy', 'database': 'disconnected', 'error': message}), 500
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return jsonify({
