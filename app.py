@@ -10,11 +10,23 @@ from iam.interfaces.services import iam_api
 from shared.infrastructure.database import init_db
 
 # Configurar logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['DEBUG'] = True  # Habilitar modo debug
+
+# Configuraciones específicas para Azure
+app.config['MYSQL_DATABASE_CHARSET'] = 'utf8mb4'
+app.config['JSON_AS_ASCII'] = False
+
+# Configurar timeout de requests para Azure
+import socket
+socket.setdefaulttimeout(60)
+
 app.register_blueprint(iam_api)
 app.register_blueprint(readings_api)
 
@@ -27,10 +39,9 @@ def setup():
     if first_request:
         first_request = False
         try:
-            # Solo verificar conexión, no crear tablas
-            from shared.infrastructure.database import db
-            db.connect()
-            db.close()
+            # Verificar conexión con el nuevo sistema robusto
+            from shared.infrastructure.database import ensure_connection
+            ensure_connection()
             logger.info("Conexión a base de datos exitosa")
         except Exception as e:
             logger.error(f"Error conectando a la base de datos: {e}")
@@ -73,10 +84,9 @@ def handle_exception(e):
 def health_check():
     """Endpoint para verificar el estado de la aplicación."""
     try:
-        # Verificar conexión a base de datos
-        from shared.infrastructure.database import db
-        db.connect()
-        db.close()
+        # Verificar conexión con el nuevo sistema robusto
+        from shared.infrastructure.database import ensure_connection
+        ensure_connection()
         return jsonify({'status': 'healthy', 'database': 'connected'}), 200
     except Exception as e:
         logger.error(f"Health check failed: {e}")
